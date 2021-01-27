@@ -12,25 +12,28 @@ import io.restassured.response.Response;
 import java.io.File;
 import java.util.Iterator;
 
+import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.given;
 
 
 public class MockHelpers {
-    public  RestAssured restAssured;
+    public static RestAssured restAssured;
     public static Response response;
-    String port = PropertyHelpers.getProperties("wiremock.standalone.port");
-    public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    static String port = PropertyHelpers.getProperties("wiremock.standalone.port");
+    public static Gson gson = new GsonBuilder().setPrettyPrinting().create();
     public static String mockAdress = System.getProperty("file.dir")+ PropertyHelpers.changeWithSeparator("wiremock.standalone.adress");
+    public static JsonObject json = null;
 
-    public void startWiremockStandalone(){
+
+    public static void startWiremockStandalone(){
 
         ProcessBuilder processBuilder = new ProcessBuilder();
 
         if(System.getProperty("os.name").toLowerCase().contains("win")){
-            processBuilder.command("java","-cp", "wiremock-body-transformer-1.1.6.jar;java -cp \"wiremock-body-transformer-1.1.6.jar;wiremock-2.3.1-standalone.jar\" com.github.tomakehurst.wiremock.standalone.WireMockServerRunner --verbose --extensions com.opentable.extension.BodyTransformer\nwiremock-standalone-2.27.2.jar", "com.github.tomakehurst.wiremock.standalone.WireMockServerRunner","--verbose","--extensions", "com.opentable.extension.BodyTransformer","--port", port);
+            processBuilder.command("java","-cp", "wiremock-body-transformer-1.1.6.jar;wiremock-standalone-2.27.2.jar", "com.github.tomakehurst.wiremock.standalone.WireMockServerRunner","--verbose","--extensions", "com.opentable.extension.BodyTransformer","--port", port);
 
         } else {
-            processBuilder.command("java","-cp", "wiremock-body-transformer-1.1.6.jar:java -cp \"wiremock-body-transformer-1.1.6.jar;wiremock-2.3.1-standalone.jar\" com.github.tomakehurst.wiremock.standalone.WireMockServerRunner --verbose --extensions com.opentable.extension.BodyTransformer\nwiremock-standalone-2.27.2.jar", "com.github.tomakehurst.wiremock.standalone.WireMockServerRunner","--verbose","--extensions", "com.opentable.extension.BodyTransformer","--port", port);
+            processBuilder.command("java","-cp", "wiremock-body-transformer-1.1.6.jar:wiremock-standalone-2.27.2.jar", "com.github.tomakehurst.wiremock.standalone.WireMockServerRunner","--verbose","--extensions", "com.opentable.extension.BodyTransformer","--port", port);
         }
 
 
@@ -55,8 +58,8 @@ public class MockHelpers {
 
 
     }
-    public  JsonObject createMap(String mappingFile){
-        JsonObject json =ParserHelpers.jsonFileParser(mockAdress + System.getProperty("file.separator") + "mappings" +System.getProperty("file.separator") + mappingFile);
+    public static JsonObject createMap(){
+     //   JsonObject json =ParserHelpers.jsonFileParser(mockAdress + System.getProperty("file.separator") + "mappings" +System.getProperty("file.separator") + mappingFile);
 
         String responseBody = json.get("response").getAsJsonObject().get("body").toString();
 
@@ -70,7 +73,7 @@ public class MockHelpers {
         return json;
     }
 
-    public void configureJSON(JsonObject json) {
+    public static void configureJSON() {
 
 
         String responseBody = json.getAsJsonObject("response").getAsJsonObject().get("body").toString();
@@ -91,15 +94,15 @@ public class MockHelpers {
 
     }
 
-    public JsonObject manageMap(String mappingFile, DataTable dataTable) {
+    public static JsonObject manageMap(String mappingFile, DataTable dataTable) {
 
-        JsonObject jsonObject = ParserHelpers.jsonFileParser(mockAdress + System.getProperty("file.separator") + "mappings" +System.getProperty("file.separator") + mappingFile);
+       // JsonObject jsonObject = ParserHelpers.jsonFileParser(PropertyHelpers.getProperties("mock.file.adress") + mappingFile);
 
         Iterator iterator = dataTable.getGherkinRows().iterator();
 
         while (iterator.hasNext()) {
 
-            JsonArray array = jsonObject.get("request").getAsJsonObject().get("bodyPatterns").getAsJsonArray();
+            JsonArray array = json.get("request").getAsJsonObject().get("bodyPatterns").getAsJsonArray();
             int paramSize = array.size();
 
 
@@ -134,44 +137,44 @@ public class MockHelpers {
                  //remove given param from bodyPattern
 
                  array.remove(j);
-                 jsonObject.get("request").getAsJsonObject().remove("bodyPatterns");
-                 jsonObject.get("request").getAsJsonObject().add("bodyPatterns", array);
+                 json.get("request").getAsJsonObject().remove("bodyPatterns");
+                 json.get("request").getAsJsonObject().add("bodyPatterns", array);
 
 
              }
 
              //replace given object value from response.body
-             JsonObject json = jsonObject.get("response").getAsJsonObject().get("body").getAsJsonObject();
+             JsonObject json2 = json.get("response").getAsJsonObject().get("body").getAsJsonObject();
              if(parentObj != ""){
-                 json = json.get(parentObj).getAsJsonObject();
+                 json2 = json2.get(parentObj).getAsJsonObject();
              }
 
              else{
-                 json.addProperty(objectName,objectValue);
+                 json2.addProperty(objectName,objectValue);
 
              }
-             jsonObject.get("response").getAsJsonObject().remove("body");
-             jsonObject.get("response").getAsJsonObject().add("body", json);
+             json.get("response").getAsJsonObject().remove("body");
+             json.get("response").getAsJsonObject().add("body", json2);
 
 
        // JsonArray array2 = jsonObject.get("request").getAsJsonObject().get("bodyPatterns").getAsJsonArray();
         paramSize = array.size();
 
         if(paramSize == 0) {
-            jsonObject.get("request").getAsJsonObject().remove("bodyPatterns");
-            jsonObject.get("response").getAsJsonObject().remove("transformers");
+            json.get("request").getAsJsonObject().remove("bodyPatterns");
+            json.get("response").getAsJsonObject().remove("transformers");
         }
 
         System.out.println(">>The managed map is: ");
-        System.out.println(">>>>\n"+gson.toJson(jsonObject)+">>>>\n");
+        System.out.println(">>>>\n"+gson.toJson(json)+">>>>\n");
 
-        return jsonObject;
+
 
       }
-        return jsonObject;
+        return json;
     }
 
-    public void shutWiremock(){
+    public static void shutDownWiremock(){
         int portNum =Integer.parseInt(port);
         restAssured.baseURI =String.format("http://localhost:%d/__admin/shutDown", portNum);
 
@@ -180,19 +183,33 @@ public class MockHelpers {
         if(statusCode == 200) {
             System.out.println("Wiremock is shut down");
         }
-        else {
-            System.out.println(String.format("Wiremock is not shut down because of wiremock is already started on %d port", portNum));
+        else if (statusCode == 404){
+            System.out.println(String.format("Wiremock is not shut down because of wiremock is not already started on %d port", portNum));
 
         }
 
     }
 
-    public Boolean isWiremockStarted(){
+    public static Boolean isWiremockStarted(){
         Boolean started = false;
         int statusCode = response.getStatusCode();
-        if(statusCode == 200 || statusCode == 201) {
+        if(statusCode == 200 ) {
             started = true;
         }
         return started;
+    }
+
+    public static void sendMockRequest(){
+        String url = json.get("request").getAsJsonObject().get("url").toString();
+        baseURI = String.format("http://localhost:%d/%s",port,url);
+        response = given().when().post();
+        int statusCode = response.getStatusCode();
+        if(statusCode == 201 | statusCode == 200) {
+            System.out.println("the mock request is sent successfully");
+        }
+        else {
+            System.out.println("the mock request is NOT  sent successfully");
+
+        }
     }
 }
