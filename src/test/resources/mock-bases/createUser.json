@@ -4,14 +4,12 @@
     "urlPath": "/create",
     "bodyPatterns": [
     {
-      "matchesJsonPath": "$.name"
+      "matchesJsonPath": "$.firstname"
     },
     {
-      "matchesJsonPath": "$.salary"
-    },
-    {
-      "matchesJsonPath": "$.age"
+      "matchesJsonPath": "$.lastname"
     }
+
     ]
 
   },
@@ -20,11 +18,8 @@
     "body": {
       "status": "success",
       "data": {
-        "name": "$(name)",
-        "salary": "$(salary)",
-        "age": "$(age)",
         "id": -1,
-        "message": "Successfully! Record has been added."
+        "message": "The new user [$(firstname) $(lastname)] is created!!"
       },
 
       "transformers": [

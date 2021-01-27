@@ -1,0 +1,10 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/mocktest"
+  },
+  "response": {
+    "status": 200,
+    "body": "Wiremock is started with the defined port !"
+  }
+}
