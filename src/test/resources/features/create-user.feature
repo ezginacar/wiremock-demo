@@ -1,19 +1,21 @@
-Feature: create user
+@standalone
+Feature: create user with wiremock standalone
 
 
   Scenario: Create a user
-    Given Update "createUser" file with below parameters
-         |name  |Ezgi      |
-         |salary|100.000$  |
-         |age   |18        |
 
-    When Send "post" request
+    Given Start standalone mock with "createUser" map
 
-    Then Response should include those:
-      |name   |Ezgi                                |
-      |salary |100.000$                            |
-      |age    |18                                  |
-      |message|Successfully! Record has been added.|
+    When Send request as standalone with below parameters:
+         |firstname |$name         |
+         |lastname  |$lastname     |
+
+    Then Status code should be 200
+
+    And Response should include those:
+      |firstname   |$name             |
+      |lastname    |$lastname         |
+      |message     |The new user [$name $lastname] is created!!|
 
 
 
