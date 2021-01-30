@@ -20,6 +20,8 @@
                 *User.java
            |--- TestRunner
                 *TestRunner.java
+           |--- resources
+	        *log4j.properties
 								
         src/test
         |--- java
@@ -30,7 +32,7 @@
             |--- wiremock-standalone
             |--- resources
               * application.properties
-              *log4j.properties
+              
 							
 							
 **Technologies:**		
