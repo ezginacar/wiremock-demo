@@ -1,7 +1,6 @@
 package helpers;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import gherkin.formatter.model.DataTableRow;
@@ -9,19 +8,26 @@ import cucumber.api.DataTable;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 
-import java.io.File;
-import java.util.Iterator;
-
-import static io.restassured.RestAssured.baseURI;
+import static helpers.LogHelpers.logger;
+import static helpers.LogHelpers.mockLogger;
+import static helpers.LogHelpers.responseLogger;
+import static helpers.PropertyHelpers.changeWithSeparator;
+import static helpers.PropertyHelpers.getProperties;
 import static io.restassured.RestAssured.given;
 
 
+import java.io.File;
+import java.util.Iterator;
+
+
+
 public class MockHelpers {
-    public static RestAssured restAssured;
-    public static Response response;
-    static String port = PropertyHelpers.getProperties("wiremock.standalone.port");
-    public static Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    public static String mockAdress = System.getProperty("file.dir")+ PropertyHelpers.changeWithSeparator("wiremock.standalone.adress");
+    private static RestAssured restAssured;
+    private static Response response;
+
+    static String port = getProperties("wiremock.standalone.port");
+    public static String mockAdress = System.getProperty("file.dir")+ changeWithSeparator("wiremock.standalone.adress");
+
     public static JsonObject json = null;
 
 
@@ -43,15 +49,15 @@ public class MockHelpers {
             Process process = processBuilder.start();
             Boolean mockStarted = isWiremockStarted();
             if(mockStarted == true) {
-                System.out.println((String.format("Wiremock has started on %s port",port)));
+                logger.info((String.format("Wiremock has started on %s port",port)));
             } else {
-                System.out.println(String.format("Wiremock has started on %s port. Make sure the port is not in use!...",port));
+                logger.fatal((String.format("Wiremock has started on %s port. Make sure the port is not in use!...",port)));
             }
         }
 
         catch (Exception e) {
 
-            System.out.println((String.format("Wiremock has NOT started on %s port",port)));
+            logger.fatal((String.format("Wiremock has NOT started on %s port",port)));
             System.out.println(e.getMessage());
         }
 
@@ -67,8 +73,7 @@ public class MockHelpers {
 
         json.get("response").getAsJsonObject().addProperty("body", responseBody);
 
-        System.out.println(">>The map is: ");
-        System.out.println(">>>>\n"+gson.toJson(json)+">>>>\n");
+        mockLogger(json, "map file");
 
         return json;
     }
@@ -86,9 +91,9 @@ public class MockHelpers {
 
         int statusCode = response.getStatusCode();
         if(statusCode == 200 | statusCode == 201) {
-            System.out.println(String.format("\tThe mock service has stubbed on [ %s ] port",port));
+            logger.info(String.format("\tThe mock service has stubbed on [ %s ] port",port));
         } else {
-            System.out.println(String.format("\tThe mock service has NOT stubbed on [ %s ] port",port));
+            logger.fatal(String.format("\tThe mock service has NOT stubbed on [ %s ] port",port));
         }
 
 
@@ -165,12 +170,9 @@ public class MockHelpers {
             json.get("response").getAsJsonObject().remove("transformers");
         }
 
-        System.out.println(">>The managed map is: ");
-        System.out.println(">>>>\n"+gson.toJson(json)+">>>>\n");
-
-
-
       }
+
+        mockLogger(json, "managed mock file");
         return json;
     }
 
@@ -181,10 +183,10 @@ public class MockHelpers {
         response = given().when().post();
         int statusCode = response.getStatusCode();
         if(statusCode == 200) {
-            System.out.println("Wiremock is shut down");
+            logger.info("Wiremock is shut down");
         }
         else if (statusCode == 404){
-            System.out.println(String.format("Wiremock is not shut down because of wiremock is not already started on %d port", portNum));
+            logger.fatal(String.format("Wiremock is not shut down because of wiremock is not already started on %d port", portNum));
 
         }
 
@@ -195,20 +197,25 @@ public class MockHelpers {
         int statusCode = response.getStatusCode();
         if(statusCode == 200 ) {
             started = true;
+            responseLogger(response);
         }
         return started;
     }
 
     public static void sendMockRequest(){
+
         String url = json.get("request").getAsJsonObject().get("url").toString();
-        baseURI = String.format("http://localhost:%d/%s",port,url);
+        restAssured.baseURI = String.format("http://localhost:%d/%s",port,url);
         response = given().when().post();
         int statusCode = response.getStatusCode();
         if(statusCode == 201 | statusCode == 200) {
-            System.out.println("the mock request is sent successfully");
+            logger.info("the mock request is sent successfully");
+            responseLogger(response);
+
+
         }
         else {
-            System.out.println("the mock request is NOT  sent successfully");
+            logger.fatal("the mock request is NOT  sent successfully");
 
         }
     }
