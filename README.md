@@ -12,10 +12,7 @@
                 *MockHelpers.java
                 *ParserHelpers.java
                 *PropertyHelpers.java
-           |--- stepDefinitions
-                |--- hook
-                     *BeforeAfterTest.java
-                *Steps.java
+           
            |--- testData
                 *User.java
            |--- TestRunner
@@ -25,7 +22,11 @@
 								
         src/test
         |--- java
-            *Test.java
+            |--- stepDefinitions
+                 |--- hook
+                 *BeforeAfterTest.java
+                 *Steps.java
+           
         |--- resources
             |--- features
             |--- mock-bases
@@ -40,7 +41,7 @@
 - Language: Java 8
 - Builder: Maven 3.6.3
 - Step Definition Tools:  RestAssured 3.0.2
-- Test Assertion Tools: TestNG  1.2.5
+- Assertion Tools: TestNG  1.2.5
 - BDD Tool: Cucumber 1.2.5
 - Helpers: Rest Assured 4.3.1, 
 - Logger: log4j 1.2.17

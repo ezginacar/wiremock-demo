@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/create",
+    "bodyPatterns": [
+    {
+      "matchesJsonPath": "$.firstname"
+    },
+    {
+      "matchesJsonPath": "$.lastname"
+    }
+
+    ]
+
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "status": "success",
+      "data": {
+        "id": -1,
+        "message": "The new user [$(firstname) $(lastname)] is created!!"
+      },
+
+      "transformers": [
+        "body-transformer"
+      ]
+
+    }
+  }
+}
+
+

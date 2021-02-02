@@ -7,15 +7,17 @@ Feature: create user with wiremock standalone
     Given Start standalone mock with "createUser" map
 
     When Send request as standalone with below parameters:
-         |firstname |$name         |
-         |lastname  |$lastname     |
+         |firstname |Ezgi         |
+         |lastname  |Nacar        |
 
     Then Status code should be 200
 
-    And Response should include those:
-      |firstname   |$name             |
-      |lastname    |$lastname         |
-      |message     |The new user [$name $lastname] is created!!|
+    And Response should include elements:
+      |id     |
+      |message|
+
+    And Response should include those informations:
+      |message     |The new user [Ezgi Nacar] is created!!|
 
 
 

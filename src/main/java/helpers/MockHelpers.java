@@ -8,12 +8,15 @@ import gherkin.formatter.model.DataTableRow;
 import cucumber.api.DataTable;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
+import org.junit.Assert;
 
 import static helpers.LogHelpers.logger;
 import static helpers.LogHelpers.mockLogger;
 import static helpers.LogHelpers.responseLogger;
+import static helpers.ParserHelpers.jsonFileParser;
 import static helpers.PropertyHelpers.changeWithSeparator;
 import static helpers.PropertyHelpers.getProperties;
+import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.given;
 
 
@@ -24,15 +27,17 @@ import java.util.Iterator;
 
 public class MockHelpers {
     private static RestAssured restAssured;
-    private static Response response;
+    public static Response response;
 
     static String port = getProperties("wiremock.standalone.port");
-    public static String mockAdress = System.getProperty("file.dir")+ changeWithSeparator("wiremock.standalone.adress");
+    public static String mockAdress = System.getProperty("user.dir")+ System.getProperty("file.separator")+changeWithSeparator("wiremock.standalone.adress") + System.getProperty("file.separator");
 
     public static JsonObject json = null;
 
 
     public static void startWiremockStandalone(){
+
+        int portNum =Integer.parseInt(port);
 
         ProcessBuilder processBuilder = new ProcessBuilder();
 
@@ -48,18 +53,19 @@ public class MockHelpers {
 
         try {
             Process process = processBuilder.start();
-            Boolean mockStarted = isWiremockStarted();
-            if(mockStarted == true) {
-                logger.info((String.format("Wiremock has started on %s port",port)));
-            } else {
-                logger.fatal((String.format("Wiremock has started on %s port. Make sure the port is not in use!...",port)));
-            }
+
         }
 
         catch (Exception e) {
 
-            logger.fatal((String.format("Wiremock has NOT started on %s port",port)));
+            logger.fatal((String.format("Wiremock has NOT started on %d port",portNum)));
             System.out.println(e.getMessage());
+        }
+        Boolean mockStarted = isWiremockStarted("wiremock-standalone/mappings/mockControl");
+        if(mockStarted == true) {
+            logger.info((String.format("Wiremock has started on %d port",portNum)));
+        } else {
+            Assert.fail(String.format("Wiremock has NOT started on %d port. Make sure the port is not in use!...",portNum));
         }
 
 
@@ -79,7 +85,7 @@ public class MockHelpers {
         return json;
     }
 
-    public static void configureJSON() {
+    public static void configureJSON(JsonObject json) {
 
 
         String responseBody = json.getAsJsonObject("response").getAsJsonObject().get("body").toString();
@@ -87,6 +93,8 @@ public class MockHelpers {
 
         int portNum =Integer.parseInt(port);
         restAssured.baseURI =String.format("http://localhost:%d/__admin/mappings/new", portNum);
+
+
 
         response = given().body(json.toString()).when().post();
 
@@ -193,8 +201,17 @@ public class MockHelpers {
 
     }
 
-    public static Boolean isWiremockStarted(){
+
+
+    public static Boolean isWiremockStarted(String fileName){
+        json = ParserHelpers.jsonFileParser(fileName);
         Boolean started = false;
+
+        restAssured.baseURI = String.format("http://localhost:%s%s",port,getPath());
+
+        sendRequest( String.format("http://localhost:%s%s",port,getPath()) );
+        logger.info(String.format("%s request sent to ' http://localhost:%s%s ' ...",getMethod(), port, getPath() ));
+
         int statusCode = response.getStatusCode();
         if(statusCode == 200 ) {
             started = true;
@@ -203,21 +220,67 @@ public class MockHelpers {
         return started;
     }
 
-    public static void sendMockRequest(){
+    public static void stubMock(String mockfilename){
 
-        String url = json.get("request").getAsJsonObject().get("url").toString();
-        restAssured.baseURI = String.format("http://localhost:%d/%s",port,url);
-        response = given().when().post();
+        restAssured.baseURI = String.format("http://localhost:%d/%s",port,getPath());
+
+        response = given().body(json.toString()).when().post();
+
         int statusCode = response.getStatusCode();
+
         if(statusCode == 201 | statusCode == 200) {
-            logger.info("the mock request is sent successfully");
             responseLogger(response);
-
-
         }
         else {
-            logger.fatal("the mock request is NOT  sent successfully");
-
+            logger.fatal(mockfilename + " is not stubbed");
         }
     }
+    public static String getMethod(){
+        return json.get("request").getAsJsonObject().get("method").getAsString();
+    }
+
+    public static Response sendRequest(String URI){
+        baseURI = URI;
+        String method = getMethod();
+
+        if(method.equals("GET")){
+            response  = given().when().get();
+        }
+        else if(method.equals("POST")) {
+            response  = given().when().post();
+        }
+
+        return response;
+
+    }
+    public static Response sendRequestWithBody(JsonObject jsonBody){
+        baseURI = String.format("http://localhost:%s%s", port,getPath());
+        String method = getMethod();
+
+        if(method.equals("GET")){
+            response  = given().body(jsonBody).when().get();
+        }
+        else if(method.equals("POST")) {
+            response  = given().body(jsonBody).when().post();
+        }
+        responseLogger(response);
+
+        return response;
+
+    }
+
+
+    public static String getPath(){
+        String path = "";
+        if(json.get("request").getAsJsonObject().has("urlPath")){
+           path= json.get("request").getAsJsonObject().get("urlPath").getAsString();
+        } else if(json.get("request").getAsJsonObject().has("url")) {
+           path = json.get("request").getAsJsonObject().get("url").getAsString();
+        }
+        return path;
+    }
+
+
+
+
 }
