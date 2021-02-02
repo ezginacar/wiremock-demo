@@ -70,7 +70,7 @@ public class Steps {
                 body.get(key);
                 logger.info(String.format("The expected ' %s ' key found on the body..", key));
             }catch (Exception e) {
-                Asserst.fail(String.format("The expected ' %s ' key NOT found on the body..", key));
+                Assert.fail(String.format("The expected ' %s ' key NOT found on the body..", key));
             }
         }
 
