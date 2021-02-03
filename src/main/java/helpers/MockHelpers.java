@@ -9,6 +9,7 @@ import cucumber.api.DataTable;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.junit.Assert;
+import org.testng.annotations.Test;
 
 import static helpers.LogHelpers.logger;
 import static helpers.LogHelpers.mockLogger;
@@ -90,23 +91,12 @@ public class MockHelpers {
 
         String responseBody = json.getAsJsonObject("response").getAsJsonObject().get("body").toString();
         json.getAsJsonObject("response").getAsJsonObject().addProperty("body", responseBody);
+        mockLogger(json, "configured request");
 
-        int portNum =Integer.parseInt(port);
-        restAssured.baseURI =String.format("http://localhost:%d/__admin/mappings/new", portNum);
-
-
-
-        response = given().body(json.toString()).when().post();
-
-        int statusCode = response.getStatusCode();
-        if(statusCode == 200 | statusCode == 201) {
-            logger.info(String.format("\tThe mock service has stubbed on [ %s ] port",port));
-        } else {
-            logger.fatal(String.format("\tThe mock service has NOT stubbed on [ %s ] port",port));
-        }
 
 
     }
+    /*
 
     public static JsonObject manageMap(String mappingFile, DataTable dataTable) {
 
@@ -184,13 +174,15 @@ public class MockHelpers {
         mockLogger(json, "managed mock file");
         return json;
     }
-
+*/
     public static void shutDownWiremock(){
         int portNum =Integer.parseInt(port);
-        restAssured.baseURI =String.format("http://localhost:%d/__admin/shutDown", portNum);
+        restAssured.baseURI =String.format("http://localhost:%d/__admin/shutdown", portNum);
 
         response = given().when().post();
+
         int statusCode = response.getStatusCode();
+
         if(statusCode == 200) {
             logger.info("Wiremock is shut down");
         }
@@ -198,6 +190,9 @@ public class MockHelpers {
             logger.fatal(String.format("Wiremock is not shut down because of wiremock is not already started on %d port", portNum));
 
         }
+
+
+
 
     }
 
@@ -222,18 +217,21 @@ public class MockHelpers {
 
     public static void stubMock(String mockfilename){
 
-        restAssured.baseURI = String.format("http://localhost:%d/%s",port,getPath());
+        int portNum =Integer.parseInt(port);
+        restAssured.baseURI =String.format("http://localhost:%d/__admin/mappings/new", portNum);
+
+        mockLogger(json, "request for stubbing");
 
         response = given().body(json.toString()).when().post();
 
         int statusCode = response.getStatusCode();
+        if( statusCode == 201) {
+            logger.info(String.format("\tThe mock service has stubbed on [ %s ] port",port));
+        } else {
+            Assert.fail(String.format("\tThe mock service has NOT stubbed on [ %s ] port",port));
+        }
 
-        if(statusCode == 201 | statusCode == 200) {
-            responseLogger(response);
-        }
-        else {
-            logger.fatal(mockfilename + " is not stubbed");
-        }
+
     }
     public static String getMethod(){
         return json.get("request").getAsJsonObject().get("method").getAsString();
@@ -258,10 +256,10 @@ public class MockHelpers {
         String method = getMethod();
 
         if(method.equals("GET")){
-            response  = given().body(jsonBody).when().get();
+            response  = given().body(jsonBody.toString()).when().get();
         }
         else if(method.equals("POST")) {
-            response  = given().body(jsonBody).when().post();
+            response  = given().body(jsonBody.toString()).when().post();
         }
         responseLogger(response);
 
@@ -279,6 +277,8 @@ public class MockHelpers {
         }
         return path;
     }
+
+
 
 
 

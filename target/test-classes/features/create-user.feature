@@ -13,10 +13,12 @@ Feature: create user with wiremock standalone
     Then Status code should be 200
 
     And Response should include elements:
-      |id|
+      |id     |
+      |message|
 
     And Response should include those informations:
-      |message     |The new user [Ezgi Nacar] is created!!|
+      |data.message     |A new user [Ezgi Nacar] is created!!|
+      |status           |success                             |
 
 
 

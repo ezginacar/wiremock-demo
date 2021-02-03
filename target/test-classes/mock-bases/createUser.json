@@ -18,16 +18,18 @@
     "body": {
       "status": "success",
       "data": {
-        "id": -1,
-        "message": "The new user [$(firstname) $(lastname)] is created!!"
-      },
-
-      "transformers": [
-        "body-transformer"
-      ]
+        "id": "01",
+        "message": "A new user [$(firstname) $(lastname)] is created!!"
+      }
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": [
+      "body-transformer"
+    ]
 
     }
-  }
 }
 
 

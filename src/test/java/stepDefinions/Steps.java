@@ -4,15 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import cucumber.api.DataTable;
-import cucumber.api.PendingException;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import gherkin.formatter.model.DataTableRow;
-import helpers.MockHelpers;
-import helpers.ParserHelpers;
+
 import io.restassured.path.json.JsonPath;
-import io.restassured.response.ResponseBody;
+
 import org.testng.Assert;
 
 
@@ -21,6 +19,7 @@ import java.util.Iterator;
 import static helpers.MockHelpers.*;
 import static helpers.ParserHelpers.jsonFileParser;
 import static helpers.LogHelpers.logger;
+
 
 public class Steps {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -76,7 +75,7 @@ public class Steps {
 
     }
 
-    @Then("^Status code should be (//d+)$")
+    @Then("^Status code should be (.*?)$")
     public void validateStatusCode(int expected){
         int actual = response.getStatusCode();
         if(actual == expected){
@@ -98,13 +97,13 @@ public class Steps {
             DataTableRow row = (DataTableRow)iterator.next();
             String key = row.getCells().get(0);
             String value = row.getCells().get(1);
-
+            
             try{
-                if(body.get(key).equals(value)){
-                logger.info(String.format("The expected ' %s ' key found with ' %s ' on the response body..", key, body));
+                if(body.<String>get(key).equals(value)){
+                logger.info(String.format("The expected ' %s ' key found with ' %s ' on the response body..", key,value));
             }}
             catch (Exception e) {
-                logger.info(String.format("The expected ' %s ' key NOT found with ' %s ' on the response body..", key, body));
+                Assert.fail(String.format("The expected ' %s ' key NOT found with ' %s ' on the response body..", key, value));
             }
         }
     }

@@ -17,7 +17,8 @@ Feature: create user with wiremock standalone
       |message|
 
     And Response should include those informations:
-      |message     |The new user [Ezgi Nacar] is created!!|
+      |data.message     |A new user [Ezgi Nacar] is created!!|
+      |status           |success                             |
 
 
 
